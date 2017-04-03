@@ -3,7 +3,12 @@
 <head>
 	<title>Train Schedule</title>
 	<meta charset="utf-8">
-	<link rel="stylesheet" type="text/css" href="assets/css/main.css">
+  <!-- 
+    The following <link> tag is pointed at a file that doesn't exist so it's throwing some errors in the console.
+    You should always have your console open when working on client side code (ie code that's run in the browser)
+    so you can see and resolve those errors 🙃
+    -->
+	<!-- <link rel="stylesheet" type="text/css" href="assets/css/main.css"> -->
 	<!-- Bootstrap: Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 	<!-- Bootstrap: Optional theme -->
@@ -64,28 +69,64 @@
 
 <!-- begin firebase -->
 <script src="https://www.gstatic.com/firebasejs/3.7.1/firebase.js"></script>
+<!-- Just an extra script tag 🙃 -->
+<!-- <script> -->
+ 	<!-- // Initialize Firebase -->
+<script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
+
 <script>
- 	// Initialize Firebase
-  <script src="https://www.gstatic.com/firebasejs/3.7.3/firebase.js"></script>
-<script>
+
+// While it may not seem imperative for smaller programs, you should get in the habit
+// linking to a separate js file and also wrapping your js code in either a 
+
+// $(document).ready(function(){
+//  // code goes here
+// })
+
+// or an IIFE (immediately invoked function expression)
+// ;(function(){
+//  // code goes here
+// })()
+
+// One of the most important reasons for that is security - because right now your global variables
+// can be tampered with through the console by a malicious visitor 😮
+// And moving your code into a separate js file is useful because it separates concerns and 
+// having multiple single purpose files is much easier to reason with and much easier to maintain.
+
+  // I switched out your config values because I was getting unauthorized errors - this is likely because you
+  // didn't update your read/write rules in the firebase console. You generally don't want to set them to:
+  // {
+  //   "rules": {
+  //     ".read": true,
+  //     ".write": true
+  //   }
+  // }
+  // since it gives pretty much anybody access to your database, but for a smaller assignment like this the above rules are preferable.
+
   // Initialize Firebase
   var config = {
-    apiKey: "AIzaSyConoRtzp2DdTEHNGpeW00rac77erqHbNk",
-    authDomain: "first-firebase-898cf.firebaseapp.com",
-    databaseURL: "https://first-firebase-898cf.firebaseio.com",
-    storageBucket: "first-firebase-898cf.appspot.com",
-    messagingSenderId: "180128839396"
+    apiKey: "AIzaSyCPzKdopoykaagIsgdiijgtZYAy-77oCRM",
+    authDomain: "bcb-woot.firebaseapp.com",
+    databaseURL: "https://bcb-woot.firebaseio.com",
+    projectId: "bcb-woot",
+    storageBucket: "bcb-woot.appspot.com",
+    messagingSenderId: "738442067315"
   };
   firebase.initializeApp(config);
 
 	// created variable to reference the database + variables
+  // by setting these on the global scope you end up getting some unexpected behavior since
+  // you set `freq` in the click handler and then you use it to determine `minAway` in the
+  // child_added listener. It'd be better to declare these inside of the click handler
+  // so you don't have variable collisions.
 	var $trainName, $destination, $frequency, $firstTrain, freq;
 	var database = firebase.database();
 
 	  $("#submit").on("click", function(event) {
 
 		event.preventDefault();
-
+    // other than not declaring these variables with `var` inside of this 
+    // click handler, this was well written logic 👌
 		trainName = $("#trainName").val().trim();
 		destination = $("#destination").val().trim();
 		firstTrain = $("#firstTrain").val().trim();
@@ -108,20 +149,31 @@
 	
 		var trainName = snapshot.val().trainName;
 		var destination = snapshot.val().destination;
+    // make sure the key used to access properties is the same as what you stored it as.
+    // this was the cause of the `minutes away` column being NaN for all the trains on page load
+    // as you stored the frequency as `freq` but tried to retrieve it using `frequency`
 		var frequency = snapshot.val().frequency;
 		var firstTrain = snapshot.val().firstTrain;
+    // always try to declare variables and keep them scoped inside the smallest functional scope
+    // as your requirements allow. Otherwise, you'll leak variables onto the global scope and
+    // have some weird side effects to reason about.
 		cycle = snapshot.val().cycle;
 
 		var mfirstTrain = moment(firstTrain, "HH:mm");
         var difference = moment().diff((mfirstTrain), "minutes");
         var remainder = difference % freq;
+        // nice job on your logic for determining how many minutes away the next train was 
         var minAway = freq - remainder;
+        // getting the next train time was spot on as well - just needed to use this value instead of `firstTrain` below in `myArr`
         var next = moment().add(minAway, "minutes").format("LT");
 
 		var myArr = [trainName, destination, frequency, firstTrain, minAway];
 
 		var tr = $("<tr>");
 
+        // for...of loops are a new feature in es6 and while it should work in all modern browsers there are a bunch of legacy browsers
+        // that don't have support for it and will cause your code to break right here. In the future, you'll be running your code through
+        // a transpiler so this won't be an issue, but just be mindful of using it in the future.
         for (var data of myArr) {
             var td = $("<td>");
             td.text(data);
@@ -135,7 +187,7 @@
 	});	
 
 </script>
-
-<script type="text/javascript" src="assets/js/main.js"></script>
+<!-- This isn't currently linking to anything, but you've got the right idea for linking to an external file -->
+<!-- <script type="text/javascript" src="assets/js/main.js"></script> -->
 </body>
 </html>
